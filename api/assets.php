@@ -76,7 +76,14 @@ switch ($action) {
 			$assets = $stmt->fetchAll();
 			
 			// Add share URLs to each asset
-			$baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+			// Check for HTTPS in multiple ways (for proxy setups)
+			$isHttps = (
+				(isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||
+				(isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ||
+				(isset($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on') ||
+				(isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443)
+			);
+			$baseUrl = ($isHttps ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
 			
 			foreach ($assets as &$asset) {
 				// Generate public share link if token exists

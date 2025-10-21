@@ -65,7 +65,14 @@ switch ($action) {
 			$brandKits = $stmt->fetchAll();
 			
             // For each brand kit, get associated assets and share URL
-			$baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+			// Check for HTTPS in multiple ways (for proxy setups)
+			$isHttps = (
+				(isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||
+				(isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ||
+				(isset($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on') ||
+				(isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443)
+			);
+			$baseUrl = ($isHttps ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
 			
 			foreach ($brandKits as &$kit) {
                     // Ensure kit has share token (ignore if column missing)
@@ -194,7 +201,13 @@ switch ($action) {
                         }
                     } catch (\Throwable $e) {
                         // Fallback to proxy URL if Nextcloud copy fails
-                        $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+                        $isHttps = (
+                            (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||
+                            (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ||
+                            (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on') ||
+                            (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443)
+                        );
+                        $baseUrl = ($isHttps ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
                         $logoUrl = $baseUrl . '/api/image_proxy.php?id=' . $logoAssetId;
                     }
                 }
@@ -267,7 +280,13 @@ switch ($action) {
 				$stmt->execute([$logoAssetId, $targetUserId]);
 				$logoAsset = $stmt->fetch();
 				if ($logoAsset) {
-					$baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+					$isHttps = (
+						(isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||
+						(isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ||
+						(isset($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on') ||
+						(isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443)
+					);
+					$baseUrl = ($isHttps ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
 					$logoUrl = $baseUrl . '/api/image_proxy.php?id=' . $logoAssetId;
 				} else {
 					$logoUrl = null;

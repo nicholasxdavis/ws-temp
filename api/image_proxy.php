@@ -151,6 +151,23 @@ try {
 		
 		// Set appropriate headers
 		$contentType = $asset['type'] ?? 'application/octet-stream';
+		
+		// If the type is not a proper MIME type, try to detect it from the filename
+		if (!strpos($contentType, '/') || $contentType === 'asset') {
+			$extension = strtolower(pathinfo($asset['name'], PATHINFO_EXTENSION));
+			$mimeTypes = [
+				'png' => 'image/png',
+				'jpg' => 'image/jpeg',
+				'jpeg' => 'image/jpeg',
+				'gif' => 'image/gif',
+				'webp' => 'image/webp',
+				'svg' => 'image/svg+xml',
+				'bmp' => 'image/bmp',
+				'ico' => 'image/x-icon'
+			];
+			$contentType = $mimeTypes[$extension] ?? 'application/octet-stream';
+		}
+		
 		header('Content-Type: ' . $contentType);
 		header('Cache-Control: public, max-age=3600');
 		header('Access-Control-Allow-Origin: *');
