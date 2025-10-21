@@ -91,11 +91,26 @@ switch ($action) {
 					$asset['public_url'] = $baseUrl . '/public/view.php?t=' . $shareToken;
 				}
 				
-				// Generate preview URL using image proxy
-				if (!empty($asset['share_token'])) {
-					$asset['preview_url'] = $baseUrl . '/api/image_proxy.php?t=' . $asset['share_token'] . '&size=300';
+				// Generate preview URL - use Nextcloud preview if available, otherwise fallback to image proxy
+				if (!empty($asset['nextcloud_file_id'])) {
+					// Use Nextcloud preview URL (never expires)
+					$ncConfig = require dirname(__DIR__) . '/config/nextcloud.php';
+					$ncBaseUrl = rtrim($ncConfig['url'], '/');
+					$etag = $asset['nextcloud_etag'] ?? '';
+					$asset['preview_url'] = $ncBaseUrl . '/core/preview?' . http_build_query([
+						'fileId' => $asset['nextcloud_file_id'],
+						'x' => 300,
+						'y' => 300,
+						'a' => 'true',
+						'etag' => $etag
+					]);
 				} else {
-					$asset['preview_url'] = $baseUrl . '/api/image_proxy.php?id=' . $asset['id'] . '&size=300';
+					// Fallback to image proxy
+					if (!empty($asset['share_token'])) {
+						$asset['preview_url'] = $baseUrl . '/api/image_proxy.php?t=' . $asset['share_token'] . '&size=300';
+					} else {
+						$asset['preview_url'] = $baseUrl . '/api/image_proxy.php?id=' . $asset['id'] . '&size=300';
+					}
 				}
 				
 				// Check download permissions

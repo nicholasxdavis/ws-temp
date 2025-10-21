@@ -203,8 +203,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		// Build URLs for frontend
 		$baseAppUrl = getBaseUrl();
 		
-		// Generate preview URL using image proxy
-		$previewUrl = $baseAppUrl . '/api/image_proxy.php?t=' . $shareToken . '&size=300';
+		// Generate preview URL - use Nextcloud preview if available, otherwise fallback to image proxy
+		$previewUrl = null;
+		if ($storageDriver === 'nextcloud' && isset($fileInfo['file_id'])) {
+			// Use Nextcloud preview URL (never expires)
+			$ncConfig = require dirname(__DIR__) . '/config/nextcloud.php';
+			$baseUrl = rtrim($ncConfig['url'], '/');
+			$etag = $fileInfo['etag'] ?? '';
+			$previewUrl = $baseUrl . '/core/preview?' . http_build_query([
+				'fileId' => $fileInfo['file_id'],
+				'x' => 300,
+				'y' => 300,
+				'a' => 'true',
+				'etag' => $etag
+			]);
+		} else {
+			// Fallback to image proxy
+			$previewUrl = $baseAppUrl . '/api/image_proxy.php?t=' . $shareToken . '&size=300';
+		}
 		
 		$response = [
 			'success' => true,
