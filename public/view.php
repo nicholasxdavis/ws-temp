@@ -127,7 +127,8 @@ if (!$asset) {
 }
 
 // Get file type info
-$isImage = strpos($asset['type'], 'image/') === 0;
+$isImage = strpos($asset['type'], 'image/') === 0 || 
+           preg_match('/\.(png|jpg|jpeg|gif|webp|svg|bmp|ico)$/i', $asset['name']);
 $fileSize = round($asset['file_size'] / 1024, 2);
 ?>
 <!DOCTYPE html>
