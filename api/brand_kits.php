@@ -117,18 +117,18 @@ switch ($action) {
                         ]);
                     }
                     
-                    // Second try: Use dedicated image preview endpoint
+                    // Second try: Use simple image preview endpoint (fallback)
                     if (!$previewUrl && !empty($asset['share_token'])) {
-                        $previewUrl = $baseUrl . '/api/image_preview.php?t=' . $asset['share_token'] . '&size=300';
+                        $previewUrl = $baseUrl . '/api/simple_image_preview.php?t=' . $asset['share_token'] . '&size=300';
                     }
                     
-                    // Third try: Generate share token and use image preview endpoint
+                    // Third try: Generate share token and use simple image preview endpoint
                     if (!$previewUrl) {
                         $shareToken = bin2hex(random_bytes(16));
                         $updateStmt = $pdo->prepare("UPDATE assets SET share_token = ? WHERE id = ?");
                         try { $updateStmt->execute([$shareToken, $asset['id']]); } catch (\PDOException $e) { /* ignore */ }
                         $asset['share_token'] = $shareToken;
-                        $previewUrl = $baseUrl . '/api/image_preview.php?t=' . $shareToken . '&size=300';
+                        $previewUrl = $baseUrl . '/api/simple_image_preview.php?t=' . $shareToken . '&size=300';
                     }
                     
                     $asset['preview_url'] = $previewUrl;

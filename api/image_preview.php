@@ -91,6 +91,9 @@ try {
 	
 	$fileUrl = $baseUrl . '/' . $webdavPath . '/' . $encodedUsername . $encodedPath;
 	
+	// Debug logging
+	error_log("Image preview attempt: " . $asset['name'] . " -> " . $fileUrl);
+	
 	// Set appropriate headers BEFORE streaming
 	$contentType = $asset['type'] ?? 'application/octet-stream';
 	
@@ -131,15 +134,26 @@ try {
 		}
 	]);
 	
-	curl_exec($ch);
+	$result = curl_exec($ch);
 	$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 	$curlError = curl_error($ch);
+	$contentTypeReceived = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
 	curl_close($ch);
+	
+	// Debug logging
+	error_log("Image preview result: HTTP $httpCode, Content-Type: $contentTypeReceived, Error: $curlError");
 	
 	if ($httpCode < 200 || $httpCode >= 300) {
 		http_response_code($httpCode);
 		error_log("Image preview failed: HTTP $httpCode, Error: $curlError, URL: $fileUrl");
 		exit('Failed to retrieve file');
+	}
+	
+	// Check if we actually got image data
+	if (empty($result)) {
+		http_response_code(500);
+		error_log("Image preview returned empty content");
+		exit('No content received');
 	}
 	
 } catch (Exception $e) {

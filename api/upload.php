@@ -228,9 +228,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			]);
 		}
 		
-		// Second try: Use dedicated image preview endpoint
+		// Second try: Use simple image preview endpoint (fallback)
 		if (!$previewUrl) {
-			$previewUrl = $baseAppUrl . '/api/image_preview.php?t=' . $shareToken . '&size=300';
+			$previewUrl = $baseAppUrl . '/api/simple_image_preview.php?t=' . $shareToken . '&size=300';
 		}
 		
 		$response = [
