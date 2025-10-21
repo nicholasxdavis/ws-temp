@@ -4811,11 +4811,17 @@
                             card.classList.add('light-bg');
                         }
 
-                        const previewUrl = asset.preview_url || asset.previewUrl || asset.downloadUrl || asset.url;
+                        const previewUrl = isImage ? (asset.preview_url || (asset.share_token ? `/api/image_proxy.php?t=${asset.share_token}&size=300` : `/api/image_proxy.php?id=${asset.id}&size=300`)) : null;
                         
                         // Debug logging
-                        if (isImage && previewUrl) {
-                            console.log(`Loading brand kit image for asset ${asset.id}: ${previewUrl}`);
+                        if (isImage) {
+                            console.log(`Brand kit asset ${asset.id}:`, {
+                                isImage,
+                                previewUrl,
+                                'asset.preview_url': asset.preview_url,
+                                'asset.share_token': asset.share_token,
+                                'asset.id': asset.id
+                            });
                         }
                         const downloadLink = asset.downloadUrl || asset.url;
                         const shareLink = asset.url;
@@ -4830,8 +4836,17 @@
                         }
                         
                         card.innerHTML = `
-                            <div class="aspect-square bg-black/20 rounded-md flex items-center justify-center mb-2 overflow-hidden">
-                                ${isImage ? `<img src="${previewUrl}" class="w-full h-full object-cover" crossorigin="anonymous" onerror="console.error('Failed to load brand kit image:', this.src); this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<i class=\\'fas fa-image text-4xl text-[var(--text-secondary)]\\' title=\\'Preview unavailable\\'></i>'">` : `<i class="fas fa-file-alt text-4xl text-[var(--text-secondary)]"></i>`}
+                            <div class="aspect-square bg-black/20 rounded-md flex items-center justify-center mb-2 overflow-hidden relative">
+                                ${isImage ? `
+                                    <div class="absolute inset-0 flex items-center justify-center">
+                                        <div class="loading-spinner w-6 h-6 border-2 border-[var(--text-secondary)] border-t-transparent rounded-full animate-spin"></div>
+                                    </div>
+                                    <img src="${previewUrl}" 
+                                         class="w-full h-full object-cover opacity-0 transition-opacity duration-300" 
+                                         crossorigin="anonymous" 
+                                         onload="this.style.opacity='1'; this.previousElementSibling.style.display='none';"
+                                         onerror="console.error('Failed to load brand kit image:', this.src); this.style.display='none'; this.previousElementSibling.style.display='none'; this.parentElement.innerHTML='<i class=\\'fas fa-image text-4xl text-[var(--text-secondary)]\\' title=\\'Preview unavailable\\'></i>'">
+                                ` : `<i class="fas fa-file-alt text-4xl text-[var(--text-secondary)]"></i>`}
                             </div>
                             <p class="text-sm font-medium truncate" title="${asset.name}">${asset.name}</p>
                             <div class="flex justify-between items-center mt-1">
@@ -5025,11 +5040,17 @@
                         }
 
                         // Use preview URL from API if available, otherwise fallback to image proxy
-                        const previewUrl = isImage ? (asset.preview_url || (asset.share_token ? `/api/image_proxy.php?t=${asset.share_token}&size=300` : null)) : null;
+                        const previewUrl = isImage ? (asset.preview_url || (asset.share_token ? `/api/image_proxy.php?t=${asset.share_token}&size=300` : `/api/image_proxy.php?id=${asset.id}&size=300`)) : null;
                         
                         // Debug logging
-                        if (isImage && previewUrl) {
-                            console.log(`Loading image for asset ${asset.id}: ${previewUrl}`);
+                        if (isImage) {
+                            console.log(`Regular asset ${asset.id}:`, {
+                                isImage,
+                                previewUrl,
+                                'asset.preview_url': asset.preview_url,
+                                'asset.share_token': asset.share_token,
+                                'asset.id': asset.id
+                            });
                         }
                         const downloadLink = asset.share_token ? `/api/image_proxy.php?t=${asset.share_token}&download=true` : `/api/image_proxy.php?id=${asset.id}&download=true`;
                         const shareLink = asset.share_token ? `${window.location.origin}/public/view.php?t=${asset.share_token}` : `#no-share-token`;
