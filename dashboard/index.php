@@ -2096,11 +2096,15 @@
             // Helper function to reload assets from database
             async function reloadAssetsFromDatabase() {
                 try {
+                    console.log('Loading assets from database...');
                     const response = await fetch('/api/assets.php?action=list', {
                         headers: getAuthHeaders()
                     });
                     const data = await response.json();
+                    console.log('Assets API response:', data);
+                    
                     if (data.success && data.assets) {
+                        console.log('Processing', data.assets.length, 'assets from API');
                         assets = data.assets.map(asset => {
                             // Use public_url from API (handles token generation)
                             const publicUrl = asset.public_url || null;
@@ -2115,13 +2119,17 @@
                                 previewUrl: previewUrl, // Use API preview URL
                                 preview_url: asset.preview_url, // Also store the API preview URL
                                 shareToken: asset.share_token,
+                                share_token: asset.share_token, // Also store as share_token for compatibility
                                 type: asset.type,
                                 size: (asset.file_size / 1024).toFixed(2) + ' KB',
                                 category: 'other'
                             };
                         });
+                        console.log('Processed assets:', assets);
                         ls.set(getUserDataKey('stella_assets'), assets);
                         return true;
+                    } else {
+                        console.log('No assets found or API error:', data);
                     }
                     return false;
                 } catch (error) {
@@ -2273,6 +2281,7 @@
                                 previewUrl: previewUrl, // Use API preview URL
                                 preview_url: asset.preview_url, // Also store the API preview URL
                                 shareToken: asset.share_token,
+                                share_token: asset.share_token, // Also store as share_token for compatibility
                                 type: asset.type,
                                 size: (asset.file_size / 1024).toFixed(2) + ' KB',
                                 category: 'other' // TODO: Add category to database
@@ -2280,14 +2289,22 @@
                         });
                         // Cache in localStorage for quick access
                         ls.set(getUserDataKey('stella_assets'), assets);
+                        console.log('Assets loaded from API:', assets.length, 'assets');
                     } else {
                         // Fallback to localStorage if API fails
                         assets = ls.get(getUserDataKey('stella_assets'), []);
+                        console.log('Assets loaded from localStorage:', assets.length, 'assets');
                     }
                 } catch (error) {
                     console.error('Failed to load assets from database:', error);
                     // Fallback to localStorage
                     assets = ls.get(getUserDataKey('stella_assets'), []);
+                    console.log('Assets loaded from localStorage (fallback):', assets.length, 'assets');
+                }
+                
+                // Render assets after loading
+                if (typeof renderAssets === 'function') {
+                    renderAssets();
                 }
 
                 // Load brand kits from database API (syncs across devices)
@@ -5019,11 +5036,24 @@
                     const selectedCategory = categoryFilter.value;
                     if(!grid || !emptyState) return;
 
+                    // Debug logging
+                    console.log('renderAssets called:', {
+                        totalAssets: assets.length,
+                        assets: assets,
+                        selectedCategory: selectedCategory
+                    });
+
                     // Filter out brand kit logos and only show regular assets
                     const regularAssets = assets.filter(asset => asset.type !== 'logo');
                     const filteredAssets = selectedCategory === 'all' 
                         ? regularAssets 
                         : regularAssets.filter(asset => asset.category === selectedCategory);
+                    
+                    console.log('Filtered assets:', {
+                        regularAssets: regularAssets.length,
+                        filteredAssets: filteredAssets.length,
+                        filteredAssets: filteredAssets
+                    });
 
                     grid.innerHTML = '';
                     emptyState.style.display = filteredAssets.length === 0 ? 'block' : 'none';

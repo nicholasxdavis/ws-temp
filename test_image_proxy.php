@@ -43,20 +43,37 @@ try {
 
 // Get some sample assets
 try {
-    $stmt = $pdo->query("SELECT id, name, type, share_token FROM assets WHERE type LIKE 'image/%' LIMIT 5");
+    // First, let's see what assets exist at all
+    $stmt = $pdo->query("SELECT COUNT(*) as total FROM assets");
+    $totalAssets = $stmt->fetch();
+    echo '<p class="info">Total assets in database: ' . $totalAssets['total'] . '</p>';
+    
+    // Get all asset types
+    $stmt = $pdo->query("SELECT type, COUNT(*) as count FROM assets GROUP BY type ORDER BY count DESC");
+    $assetTypes = $stmt->fetchAll();
+    echo '<h3>Asset Types in Database:</h3><ul>';
+    foreach ($assetTypes as $type) {
+        echo '<li>' . htmlspecialchars($type['type']) . ' (' . $type['count'] . ' assets)</li>';
+    }
+    echo '</ul>';
+    
+    // Get some sample assets (all types, not just images)
+    $stmt = $pdo->query("SELECT id, name, type, share_token, file_size FROM assets LIMIT 10");
     $assets = $stmt->fetchAll();
     
     if (empty($assets)) {
-        echo '<p class="info">No image assets found in database</p>';
+        echo '<p class="info">No assets found in database at all</p>';
     } else {
-        echo '<h2>Testing Image Assets:</h2>';
+        echo '<h2>Testing All Assets:</h2>';
         
         foreach ($assets as $asset) {
+            $isImage = strpos($asset['type'], 'image/') === 0;
             echo '<div style="margin: 20px 0; padding: 15px; border: 1px solid #333; border-radius: 5px;">';
             echo '<h3>' . htmlspecialchars($asset['name']) . '</h3>';
             echo '<p><strong>ID:</strong> ' . $asset['id'] . '</p>';
-            echo '<p><strong>Type:</strong> ' . htmlspecialchars($asset['type']) . '</p>';
+            echo '<p><strong>Type:</strong> ' . htmlspecialchars($asset['type']) . ' ' . ($isImage ? '<span style="color: #4CAF50;">(Image)</span>' : '<span style="color: #ff9800;">(Not Image)</span>') . '</p>';
             echo '<p><strong>Share Token:</strong> ' . ($asset['share_token'] ? htmlspecialchars($asset['share_token']) : 'None') . '</p>';
+            echo '<p><strong>File Size:</strong> ' . ($asset['file_size'] ? number_format($asset['file_size']) . ' bytes' : 'Unknown') . '</p>';
             
             // Test different URL formats
             $urls = [];
@@ -77,7 +94,12 @@ try {
                 echo '<div style="margin: 10px 0;">';
                 echo '<p><strong>' . $urlTest['name'] . ':</strong></p>';
                 echo '<p><code>' . htmlspecialchars($urlTest['url']) . '</code></p>';
-                echo '<img src="' . htmlspecialchars($urlTest['url']) . '" class="test-image" onload="this.style.border=\'2px solid #4CAF50\'" onerror="this.style.border=\'2px solid #f44336\'; this.alt=\'Failed to load\'" alt="Loading...">';
+                
+                if ($isImage) {
+                    echo '<img src="' . htmlspecialchars($urlTest['url']) . '" class="test-image" onload="this.style.border=\'2px solid #4CAF50\'; console.log(\'Image loaded:\', this.src)" onerror="this.style.border=\'2px solid #f44336\'; this.alt=\'Failed to load\'; console.error(\'Image failed:\', this.src)" alt="Loading...">';
+                } else {
+                    echo '<p style="color: #ff9800;">Not an image - skipping preview</p>';
+                }
                 echo '</div>';
             }
             
