@@ -64,8 +64,7 @@ function getUsersCount($pdo, $userId) {
         // Get team size for the user's team
         $stmt = $pdo->prepare("
             SELECT COUNT(*) FROM team_members tm
-            JOIN users u ON u.team_id = tm.team_id
-            WHERE u.id = ?
+            WHERE tm.workspace_owner_id = ?
         ");
         $stmt->execute([$userId]);
         return (int)$stmt->fetchColumn();

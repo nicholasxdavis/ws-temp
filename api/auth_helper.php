@@ -319,7 +319,7 @@ function getUserRole($userId) {
         ]);
         
         // Check if user is a team member
-        $stmt = $pdo->prepare("SELECT role FROM team_members WHERE email = (SELECT email FROM users WHERE id = ?)");
+        $stmt = $pdo->prepare("SELECT role FROM team_members WHERE member_email = (SELECT email FROM users WHERE id = ?)");
         $stmt->execute([$userId]);
         $member = $stmt->fetch();
         

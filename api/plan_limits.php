@@ -44,8 +44,9 @@ class PlanLimits {
         $stmt = $this->pdo->prepare("
             SELECT u.plan_type as owner_plan
             FROM team_members tm
-            JOIN users u ON tm.user_id = u.id
-            WHERE tm.member_user_id = ?
+            JOIN users u ON tm.workspace_owner_id = u.id
+            JOIN users member ON member.email = tm.member_email
+            WHERE member.id = ?
             AND tm.status = 'active'
             LIMIT 1
         ");
@@ -100,7 +101,7 @@ class PlanLimits {
         $stmt = $this->pdo->prepare("
             SELECT COUNT(*) as count 
             FROM team_members 
-            WHERE user_id = ? 
+            WHERE workspace_owner_id = ? 
             AND status IN ('active', 'pending')
         ");
         $stmt->execute([$userId]);
