@@ -98,27 +98,38 @@ switch ($action) {
 					$asset['public_url'] = $baseUrl . '/public/view.php?t=' . $shareToken;
 				}
 				
-				// Generate preview URL - use Nextcloud preview if available, otherwise fallback to image proxy
+				// Generate preview URL - try multiple approaches
+				$previewUrl = null;
+				
+				// First try: Nextcloud preview with file ID (if available)
 				if (!empty($asset['nextcloud_file_id'])) {
-					// Use Nextcloud preview URL (never expires)
 					$ncConfig = require dirname(__DIR__) . '/config/nextcloud.php';
 					$ncBaseUrl = rtrim($ncConfig['url'], '/');
 					$etag = $asset['nextcloud_etag'] ?? '';
-					$asset['preview_url'] = $ncBaseUrl . '/core/preview?' . http_build_query([
+					$previewUrl = $ncBaseUrl . '/core/preview?' . http_build_query([
 						'fileId' => $asset['nextcloud_file_id'],
 						'x' => 300,
 						'y' => 300,
 						'a' => 'true',
 						'etag' => $etag
 					]);
-				} else {
-					// Fallback to image proxy
-					if (!empty($asset['share_token'])) {
-						$asset['preview_url'] = $baseUrl . '/api/image_proxy.php?t=' . $asset['share_token'] . '&size=300';
-					} else {
-						$asset['preview_url'] = $baseUrl . '/api/image_proxy.php?id=' . $asset['id'] . '&size=300';
-					}
 				}
+				
+				// Second try: Use public share URL for preview (simpler approach)
+				if (!$previewUrl && !empty($asset['share_token'])) {
+					$previewUrl = $baseUrl . '/public/view.php?t=' . $asset['share_token'];
+				}
+				
+				// Third try: Generate share token and use public URL
+				if (!$previewUrl) {
+					$shareToken = bin2hex(random_bytes(16));
+					$updateStmt = $pdo->prepare("UPDATE assets SET share_token = ? WHERE id = ?");
+					$updateStmt->execute([$shareToken, $asset['id']]);
+					$asset['share_token'] = $shareToken;
+					$previewUrl = $baseUrl . '/public/view.php?t=' . $shareToken;
+				}
+				
+				$asset['preview_url'] = $previewUrl;
 				
 				// Check download permissions
 				$downloadCheck = checkDownloadPermission($pdo, $userId, $asset['id']);
