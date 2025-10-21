@@ -4819,7 +4819,9 @@
 
                 if(hasAssets) {
                     kit.assets.forEach(asset => {
-                        const isImage = asset.type.startsWith('image/');
+                        // Check both MIME type and file extension for image detection
+                        const isImage = asset.type.startsWith('image/') || 
+                                      /\.(png|jpg|jpeg|gif|webp|svg|bmp|ico)$/i.test(asset.name);
                         const card = document.createElement('div');
                         card.className = 'asset-card glass-card p-3 rounded-lg flex flex-col';
                         card.dataset.id = asset.id;
@@ -5060,7 +5062,9 @@
                     grid.style.display = filteredAssets.length > 0 ? 'grid' : 'none';
                     
                     filteredAssets.forEach(asset => {
-                        const isImage = asset.type.startsWith('image/');
+                        // Check both MIME type and file extension for image detection
+                        const isImage = asset.type.startsWith('image/') || 
+                                      /\.(png|jpg|jpeg|gif|webp|svg|bmp|ico)$/i.test(asset.name);
                         const card = document.createElement('div');
                         card.className = 'asset-card glass-card p-3 rounded-lg flex flex-col';
                         card.dataset.id = asset.id;
