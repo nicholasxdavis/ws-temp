@@ -132,28 +132,11 @@ try {
 		
 		$fileUrl = $baseUrl . '/' . $webdavPath . '/' . $encodedUsername . $encodedPath;
 		
-		// Stream the file
-		$ch = curl_init($fileUrl);
-		curl_setopt_array($ch, [
-			CURLOPT_USERPWD => $userCreds['nextcloud_username'] . ':' . $userCreds['nextcloud_password'],
-			CURLOPT_RETURNTRANSFER => false,
-			CURLOPT_HEADER => false,
-			CURLOPT_FOLLOWLOCATION => true,
-			CURLOPT_SSL_VERIFYPEER => true,
-			CURLOPT_SSL_VERIFYHOST => 2,
-			CURLOPT_TIMEOUT => 30,
-			// Write to output
-			CURLOPT_WRITEFUNCTION => function($ch, $data) {
-				echo $data;
-				return strlen($data);
-			}
-		]);
-		
-		// Set appropriate headers
+		// Set appropriate headers BEFORE streaming
 		$contentType = $asset['type'] ?? 'application/octet-stream';
 		
 		// If the type is not a proper MIME type, try to detect it from the filename
-		if (!strpos($contentType, '/') || $contentType === 'asset') {
+		if (strpos($contentType, '/') === false || $contentType === 'asset') {
 			$extension = strtolower(pathinfo($asset['name'], PATHINFO_EXTENSION));
 			$mimeTypes = [
 				'png' => 'image/png',
@@ -180,6 +163,26 @@ try {
 		} else {
 			header('Content-Disposition: inline; filename="' . $asset['name'] . '"');
 		}
+		
+		// Debug logging
+		error_log("Image proxy serving: " . $asset['name'] . " with Content-Type: " . $contentType);
+		
+		// Stream the file
+		$ch = curl_init($fileUrl);
+		curl_setopt_array($ch, [
+			CURLOPT_USERPWD => $userCreds['nextcloud_username'] . ':' . $userCreds['nextcloud_password'],
+			CURLOPT_RETURNTRANSFER => false,
+			CURLOPT_HEADER => false,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_SSL_VERIFYPEER => true,
+			CURLOPT_SSL_VERIFYHOST => 2,
+			CURLOPT_TIMEOUT => 30,
+			// Write to output
+			CURLOPT_WRITEFUNCTION => function($ch, $data) {
+				echo $data;
+				return strlen($data);
+			}
+		]);
 		
 		curl_exec($ch);
 		$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
